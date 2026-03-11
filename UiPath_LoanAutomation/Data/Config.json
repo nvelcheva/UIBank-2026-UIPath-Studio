@@ -1,0 +1,41 @@
+{
+  "Settings": {
+    "UiBankURL": "https://uibank.uipath.com",
+    "LoanApplicationURL": "https://uibank.uipath.com/loan-application",
+    "RegisterURL": "https://uibank.uipath.com/register",
+    "CurrencyAPIBaseURL": "https://restcountries.com/v3.1/name",
+    "ExchangeRateAPI": "https://api.exchangerate-api.com/v4/latest/USD"
+  },
+  "Assets": {
+    "PDFFolderPath": "C:\\LoanAutomation\\Input\\PDFs",
+    "OutputExcelPath": "C:\\LoanAutomation\\Output\\LoanResults.xlsx",
+    "LogFilePath": "C:\\LoanAutomation\\Logs"
+  },
+  "Timeouts": {
+    "PageLoadTimeout": 30000,
+    "ElementTimeout": 10000,
+    "APITimeout": 15000
+  },
+  "Retries": {
+    "MaxRetries": 3,
+    "RetryDelaySeconds": 2
+  },
+  "Browser": {
+    "BrowserType": "Chrome",
+    "Headless": false
+  },
+  "CurrencyFallbackRates": {
+    "EUR": 0.92,
+    "GBP": 0.79,
+    "BGN": 1.80,
+    "JPY": 149.5,
+    "CHF": 0.88,
+    "CAD": 1.36,
+    "AUD": 1.53
+  },
+  "BusinessRules": {
+    "SendClientEmails": false,
+    "AutoCreateAccounts": true,
+    "LogRejections": true
+  }
+}

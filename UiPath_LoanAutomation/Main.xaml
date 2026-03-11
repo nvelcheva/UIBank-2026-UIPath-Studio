@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="Main"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_ConfigPath" Type="InArgument(x:String)" />
+    <x:Property Name="in_PDFFolderPath" Type="InArgument(x:String)" />
+    <x:Property Name="in_OutputExcelPath" Type="InArgument(x:String)" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  <sap2010:WorkflowViewState.ViewStateManager>
+    <sap2010:ViewStateManager>
+      <sap2010:ViewStateData Id="Main_1" sap:VirtualizedContainerService.HintSize="600,800" />
+    </sap2010:ViewStateManager>
+  </sap2010:WorkflowViewState.ViewStateManager>
+  
+  <Sequence DisplayName="Main - Loan Automation Orchestrator" sap2010:WorkflowViewState.IdRef="Main_1">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="Config" />
+      <Variable x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))" Name="LoanApplications" />
+      <Variable x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))" Name="ProcessedResults" />
+      <Variable x:TypeArguments="x:String" Name="CurrentPDFPath" />
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="CurrentLoanData" />
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="SubmissionResult" />
+      <Variable x:TypeArguments="x:Int32" Name="SuccessCount" Default="0" />
+      <Variable x:TypeArguments="x:Int32" Name="FailedCount" Default="0" />
+      <Variable x:TypeArguments="x:Boolean" Name="AccountCreated" Default="False" />
+    </Sequence.Variables>
+    
+    <!-- STEP 1: Initialize and Load Configuration -->
+    <ui:LogMessage DisplayName="Log: Start Automation" Level="Info" Message="=&quot;========== LOAN AUTOMATION STARTED ==========&quot;" />
+    
+    <ui:InvokeWorkflowFile DisplayName="Initialize Configuration" WorkflowFileName="Workflows\InitializeConfig.xaml">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="x:String" x:Key="in_ConfigPath">[in_ConfigPath]</InArgument>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="out_Config">[Config]</OutArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
+    
+    <!-- STEP 2: Get All PDF Files from Input Folder -->
+    <Assign DisplayName="Initialize Results List">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))">[ProcessedResults]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))">[New List(Of Dictionary(Of String, Object))]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:InvokeWorkflowFile DisplayName="Get PDF Files List" WorkflowFileName="Workflows\GetPDFFiles.xaml">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="x:String" x:Key="in_FolderPath">[in_PDFFolderPath]</InArgument>
+        <OutArgument x:TypeArguments="x:String[]" x:Key="out_PDFFiles">[PDFFiles]</OutArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
+    
+    <ui:LogMessage DisplayName="Log: PDF Count" Level="Info" Message="[&quot;Found &quot; &amp; PDFFiles.Length.ToString() &amp; &quot; PDF files to process&quot;]" />
+    
+    <!-- STEP 3: Create UiBank Account (One Time) -->
+    <ui:InvokeWorkflowFile DisplayName="Create UiBank Account" WorkflowFileName="Workflows\CreateUiBankAccount.xaml">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_Config">[Config]</InArgument>
+        <OutArgument x:TypeArguments="x:Boolean" x:Key="out_AccountCreated">[AccountCreated]</OutArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
+    
+    <!-- STEP 4: Process Each PDF -->
+    <ForEach x:TypeArguments="x:String" DisplayName="For Each PDF File" Values="[PDFFiles]">
+      <ActivityAction x:TypeArguments="x:String">
+        <ActivityAction.Argument>
+          <DelegateInArgument x:TypeArguments="x:String" Name="pdfFile" />
+        </ActivityAction.Argument>
+        <TryCatch DisplayName="Try Process Single Loan">
+          <TryCatch.Try>
+            <Sequence DisplayName="Process Single Loan Application">
+              <ui:LogMessage DisplayName="Log: Processing PDF" Level="Info" Message="[&quot;Processing: &quot; &amp; pdfFile]" />
+              
+              <!-- Extract Data from PDF -->
+              <ui:InvokeWorkflowFile DisplayName="Extract PDF Data" WorkflowFileName="Workflows\ExtractPDFData.xaml">
+                <ui:InvokeWorkflowFile.Arguments>
+                  <InArgument x:TypeArguments="x:String" x:Key="in_PDFPath">[pdfFile]</InArgument>
+                  <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="out_LoanData">[CurrentLoanData]</OutArgument>
+                </ui:InvokeWorkflowFile.Arguments>
+              </ui:InvokeWorkflowFile>
+              
+              <!-- Convert Currency to USD -->
+              <ui:InvokeWorkflowFile DisplayName="Convert Currency" WorkflowFileName="Workflows\ConvertCurrency.xaml">
+                <ui:InvokeWorkflowFile.Arguments>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="io_LoanData">[CurrentLoanData]</InArgument>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_Config">[Config]</InArgument>
+                </ui:InvokeWorkflowFile.Arguments>
+              </ui:InvokeWorkflowFile>
+              
+              <!-- Submit to UiBank -->
+              <ui:InvokeWorkflowFile DisplayName="Submit Loan Application" WorkflowFileName="Workflows\SubmitLoanApplication.xaml">
+                <ui:InvokeWorkflowFile.Arguments>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_LoanData">[CurrentLoanData]</InArgument>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_Config">[Config]</InArgument>
+                  <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="out_Result">[SubmissionResult]</OutArgument>
+                </ui:InvokeWorkflowFile.Arguments>
+              </ui:InvokeWorkflowFile>
+              
+              <!-- Handle Result -->
+              <ui:InvokeWorkflowFile DisplayName="Process Submission Result" WorkflowFileName="Workflows\ProcessResult.xaml">
+                <ui:InvokeWorkflowFile.Arguments>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_LoanData">[CurrentLoanData]</InArgument>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_Result">[SubmissionResult]</InArgument>
+                  <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_Config">[Config]</InArgument>
+                  <InArgument x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))" x:Key="io_ProcessedResults">[ProcessedResults]</InArgument>
+                </ui:InvokeWorkflowFile.Arguments>
+              </ui:InvokeWorkflowFile>
+              
+              <Assign DisplayName="Increment Success">
+                <Assign.To>
+                  <OutArgument x:TypeArguments="x:Int32">[SuccessCount]</OutArgument>
+                </Assign.To>
+                <Assign.Value>
+                  <InArgument x:TypeArguments="x:Int32">[SuccessCount + 1]</InArgument>
+                </Assign.Value>
+              </Assign>
+              
+            </Sequence>
+          </TryCatch.Try>
+          <TryCatch.Catches>
+            <Catch x:TypeArguments="s:Exception" xmlns:s="clr-namespace:System;assembly=mscorlib">
+              <ActivityAction x:TypeArguments="s:Exception">
+                <ActivityAction.Argument>
+                  <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+                </ActivityAction.Argument>
+                <Sequence DisplayName="Handle Exception">
+                  <ui:LogMessage DisplayName="Log Error" Level="Error" Message="[&quot;Error processing &quot; &amp; pdfFile &amp; &quot;: &quot; &amp; exception.Message]" />
+                  <Assign DisplayName="Increment Failed">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="x:Int32">[FailedCount]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="x:Int32">[FailedCount + 1]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                </Sequence>
+              </ActivityAction>
+            </Catch>
+          </TryCatch.Catches>
+        </TryCatch>
+      </ActivityAction>
+    </ForEach>
+    
+    <!-- STEP 5: Generate Excel Report -->
+    <ui:InvokeWorkflowFile DisplayName="Generate Excel Report" WorkflowFileName="Workflows\GenerateExcelReport.xaml">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))" x:Key="in_Results">[ProcessedResults]</InArgument>
+        <InArgument x:TypeArguments="x:String" x:Key="in_OutputPath">[in_OutputExcelPath]</InArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
+    
+    <!-- STEP 6: Generate Interest Rate Analysis -->
+    <ui:InvokeWorkflowFile DisplayName="Generate Analysis Report" WorkflowFileName="Workflows\InterestRateAnalysis.xaml">
+      <ui:InvokeWorkflowFile.Arguments>
+        <InArgument x:TypeArguments="scg:List(scg:Dictionary(x:String, x:Object))" x:Key="in_Results">[ProcessedResults]</InArgument>
+        <InArgument x:TypeArguments="x:String" x:Key="in_OutputPath">[in_OutputExcelPath]</InArgument>
+      </ui:InvokeWorkflowFile.Arguments>
+    </ui:InvokeWorkflowFile>
+    
+    <!-- Final Summary -->
+    <ui:LogMessage DisplayName="Log: Complete" Level="Info" Message="[&quot;========== AUTOMATION COMPLETE ==========&quot; &amp; vbCrLf &amp; &quot;Successful: &quot; &amp; SuccessCount.ToString() &amp; vbCrLf &amp; &quot;Failed: &quot; &amp; FailedCount.ToString()]" />
+    
+  </Sequence>
+</Activity>

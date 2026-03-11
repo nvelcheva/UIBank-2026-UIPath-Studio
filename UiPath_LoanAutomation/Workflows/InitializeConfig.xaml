@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="InitializeConfig"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_ConfigPath" Type="InArgument(x:String)" />
+    <x:Property Name="out_Config" Type="OutArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  
+  <Sequence DisplayName="Initialize Configuration">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="ConfigDict" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Init Config" Level="Info" Message="Initializing configuration settings..." />
+    
+    <!-- Initialize Config Dictionary -->
+    <Assign DisplayName="Create Config Dictionary">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ConfigDict]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[New Dictionary(Of String, Object)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- UiBank Settings -->
+    <InvokeMethod DisplayName="Add UiBank URL" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["UiBankURL"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">["https://uibank.uipath.com"]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Loan Page URL" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["LoanApplicationURL"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">["https://uibank.uipath.com/loan-application"]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Register URL" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["RegisterURL"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">["https://uibank.uipath.com/register"]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Currency API Settings -->
+    <InvokeMethod DisplayName="Add Currency API" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["CurrencyAPIBaseURL"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">["https://restcountries.com/v3.1/name"]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Exchange Rate API" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["ExchangeRateAPI"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">["https://api.exchangerate-api.com/v4/latest/USD"]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Timeout Settings -->
+    <InvokeMethod DisplayName="Add Page Load Timeout" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["PageLoadTimeout"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[30000]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Element Timeout" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["ElementTimeout"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[10000]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Retry Settings -->
+    <InvokeMethod DisplayName="Add Max Retries" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["MaxRetries"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[3]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Browser Settings -->
+    <InvokeMethod DisplayName="Add Browser Type" MethodName="Add" TargetObject="[ConfigDict]">
+      <InArgument x:TypeArguments="x:String">["BrowserType"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">["Chrome"]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Output Config -->
+    <Assign DisplayName="Output Config">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[out_Config]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ConfigDict]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Config Loaded" Level="Info" Message="Configuration loaded successfully" />
+    
+  </Sequence>
+</Activity>

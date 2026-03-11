@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="ExtractPDFData"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:updf="clr-namespace:UiPath.PDF.Activities;assembly=UiPath.PDF.Activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:sre="clr-namespace:System.Text.RegularExpressions;assembly=System">
+  <x:Members>
+    <x:Property Name="in_PDFPath" Type="InArgument(x:String)" />
+    <x:Property Name="out_LoanData" Type="OutArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  
+  <Sequence DisplayName="Extract PDF Data">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="PDFText" />
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="ExtractedData" />
+      <Variable x:TypeArguments="x:String" Name="Email" />
+      <Variable x:TypeArguments="x:String" Name="RequestAmount" />
+      <Variable x:TypeArguments="x:String" Name="Currency" />
+      <Variable x:TypeArguments="x:String" Name="YearlyIncome" />
+      <Variable x:TypeArguments="x:String" Name="Age" />
+      <Variable x:TypeArguments="x:String" Name="InterestRate" />
+      <Variable x:TypeArguments="x:String" Name="Country" />
+      <Variable x:TypeArguments="sre:Match" Name="RegexMatch" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Extract Start" Level="Info" Message="[&quot;Extracting data from: &quot; &amp; in_PDFPath]" />
+    
+    <!-- Read PDF Text -->
+    <updf:ReadPDFText DisplayName="Read PDF Text" FileName="[in_PDFPath]" Text="[PDFText]" />
+    
+    <!-- Initialize Dictionary -->
+    <Assign DisplayName="Initialize Data Dict">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ExtractedData]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[New Dictionary(Of String, Object)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Store Source File Path -->
+    <InvokeMethod DisplayName="Add Source Path" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["SourceFile"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_PDFPath]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Email using Regex -->
+    <Assign DisplayName="Extract Email">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sre:Match">[RegexMatch]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sre:Match">[sre:Regex.Match(PDFText, "Email[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", sre:RegexOptions.IgnoreCase)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <If Condition="[RegexMatch.Success]" DisplayName="If Email Found">
+      <If.Then>
+        <Assign DisplayName="Set Email">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:String">[Email]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(1).Value.Trim()]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </If.Then>
+    </If>
+    
+    <InvokeMethod DisplayName="Add Email" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Email"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Email]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Request Amount with Currency -->
+    <Assign DisplayName="Extract Amount">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sre:Match">[RegexMatch]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sre:Match">[sre:Regex.Match(PDFText, "Request\s*Amount[:\s]*([0-9,.]+)\s*([A-Z]{3})", sre:RegexOptions.IgnoreCase)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <If Condition="[RegexMatch.Success]" DisplayName="If Amount Found">
+      <If.Then>
+        <Sequence DisplayName="Set Amount">
+          <Assign DisplayName="Set Request Amount">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[RequestAmount]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(1).Value.Trim().Replace(",", "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Set Currency">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[Currency]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(2).Value.Trim().ToUpper()]</InArgument>
+            </Assign.Value>
+          </Assign>
+        </Sequence>
+      </If.Then>
+    </If>
+    
+    <InvokeMethod DisplayName="Add Amount" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["RequestAmount"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[RequestAmount]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Currency" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Currency"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Currency]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Yearly Income -->
+    <Assign DisplayName="Extract Income">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sre:Match">[RegexMatch]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sre:Match">[sre:Regex.Match(PDFText, "Yearly\s*Income[:\s]*([0-9,.]+)\s*([A-Z]{3})?", sre:RegexOptions.IgnoreCase)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <If Condition="[RegexMatch.Success]" DisplayName="If Income Found">
+      <If.Then>
+        <Assign DisplayName="Set Income">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:String">[YearlyIncome]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(1).Value.Trim().Replace(",", "")]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </If.Then>
+    </If>
+    
+    <InvokeMethod DisplayName="Add Income" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["YearlyIncome"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[YearlyIncome]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Age -->
+    <Assign DisplayName="Extract Age">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sre:Match">[RegexMatch]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sre:Match">[sre:Regex.Match(PDFText, "Age[:\s]*([0-9]+)", sre:RegexOptions.IgnoreCase)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <If Condition="[RegexMatch.Success]" DisplayName="If Age Found">
+      <If.Then>
+        <Assign DisplayName="Set Age">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:String">[Age]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(1).Value.Trim()]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </If.Then>
+    </If>
+    
+    <InvokeMethod DisplayName="Add Age" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Age"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Age]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Estimated Interest Rate -->
+    <Assign DisplayName="Extract Interest">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sre:Match">[RegexMatch]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sre:Match">[sre:Regex.Match(PDFText, "(?:Estimated\s*)?Interest\s*Rate[:\s]*([0-9.]+)\s*%?", sre:RegexOptions.IgnoreCase)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <If Condition="[RegexMatch.Success]" DisplayName="If Interest Found">
+      <If.Then>
+        <Assign DisplayName="Set Interest">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:String">[InterestRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(1).Value.Trim()]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </If.Then>
+    </If>
+    
+    <InvokeMethod DisplayName="Add Interest" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["EstimatedInterestRate"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[InterestRate]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Country -->
+    <Assign DisplayName="Extract Country">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sre:Match">[RegexMatch]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sre:Match">[sre:Regex.Match(PDFText, "Country[:\s]*([A-Za-z\s]+)", sre:RegexOptions.IgnoreCase)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <If Condition="[RegexMatch.Success]" DisplayName="If Country Found">
+      <If.Then>
+        <Assign DisplayName="Set Country">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:String">[Country]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:String">[RegexMatch.Groups(1).Value.Trim()]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </If.Then>
+    </If>
+    
+    <InvokeMethod DisplayName="Add Country" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Country"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Country]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Output -->
+    <Assign DisplayName="Output Data">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[out_LoanData]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ExtractedData]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Extract Complete" Level="Info" Message="[&quot;Extracted - Email: &quot; &amp; Email &amp; &quot;, Amount: &quot; &amp; RequestAmount &amp; &quot; &quot; &amp; Currency]" />
+    
+  </Sequence>
+</Activity>

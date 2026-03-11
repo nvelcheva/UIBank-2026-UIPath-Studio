@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="ProcessResult"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_LoanData" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="in_Result" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="io_ProcessedResults" Type="InOutArgument(scg:List(scg:Dictionary(x:String, x:Object)))" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  
+  <Sequence DisplayName="Process Submission Result">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="Status" />
+      <Variable x:TypeArguments="x:Boolean" Name="IsNewApplication" />
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="ProcessedEntry" />
+      <Variable x:TypeArguments="x:String" Name="LoanID" />
+      <Variable x:TypeArguments="x:String" Name="APRRate" />
+      <Variable x:TypeArguments="x:String" Name="EstimatedRate" />
+      <Variable x:TypeArguments="x:Double" Name="APRNumeric" />
+      <Variable x:TypeArguments="x:Double" Name="EstimatedNumeric" />
+      <Variable x:TypeArguments="x:String" Name="Comparison" />
+    </Sequence.Variables>
+    
+    <!-- Get Status -->
+    <Assign DisplayName="Get Status">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Status]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[in_Result("Status").ToString()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Process Result" Level="Info" Message="[&quot;Processing result with status: &quot; &amp; Status]" />
+    
+    <!-- Initialize Processed Entry -->
+    <Assign DisplayName="Init Processed Entry">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ProcessedEntry]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[New Dictionary(Of String, Object)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Copy Loan Data to Processed Entry -->
+    <InvokeMethod DisplayName="Add Email" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["Email"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("Email")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Amount" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["RequestAmountUSD"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("RequestAmountUSD")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Income" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["YearlyIncomeUSD"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("YearlyIncomeUSD")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Age" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["Age"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("Age")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Country" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["Country"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("Country")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add OrigCurrency" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["OriginalCurrency"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("Currency")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Source" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["SourceFile"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("SourceFile")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Status" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["Status"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Status]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Timestamp" MethodName="Add" TargetObject="[ProcessedEntry]">
+      <InArgument x:TypeArguments="x:String">["ProcessedAt"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Handle based on Status -->
+    <Switch x:TypeArguments="x:String" DisplayName="Switch on Status" Expression="[Status]">
+      
+      <!-- APPROVED -->
+      <Case x:Key="APPROVED">
+        <Sequence DisplayName="Handle Approved">
+          <Assign DisplayName="Get LoanID">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[LoanID]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[in_Result("LoanID").ToString()]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Get APR">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[APRRate]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[in_Result("APRRate").ToString()]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Get Estimated">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[EstimatedRate]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[in_LoanData("EstimatedInterestRate").ToString()]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Get IsNew">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Boolean">[IsNewApplication]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Boolean">[CBool(in_Result("IsNewApplication"))]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <!-- Add approval details -->
+          <InvokeMethod DisplayName="Add LoanID" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["LoanID"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">[LoanID]</InArgument>
+          </InvokeMethod>
+          
+          <InvokeMethod DisplayName="Add APR" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["APRRate"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">[APRRate]</InArgument>
+          </InvokeMethod>
+          
+          <InvokeMethod DisplayName="Add EstimatedRate" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["EstimatedInterestRate"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">[EstimatedRate]</InArgument>
+          </InvokeMethod>
+          
+          <!-- Calculate Comparison -->
+          <TryCatch DisplayName="Try Compare Rates">
+            <TryCatch.Try>
+              <Sequence DisplayName="Compare Rates">
+                <Assign DisplayName="Parse APR">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:Double">[APRNumeric]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:Double">[Double.Parse(APRRate.Replace("%", "").Trim())]</InArgument>
+                  </Assign.Value>
+                </Assign>
+                
+                <Assign DisplayName="Parse Estimated">
+                  <Assign.To>
+                    <OutArgument x:TypeArguments="x:Double">[EstimatedNumeric]</OutArgument>
+                  </Assign.To>
+                  <Assign.Value>
+                    <InArgument x:TypeArguments="x:Double">[Double.Parse(EstimatedRate.Replace("%", "").Trim())]</InArgument>
+                  </Assign.Value>
+                </Assign>
+                
+                <!-- Determine which is better -->
+                <If Condition="[APRNumeric &lt; EstimatedNumeric]" DisplayName="Compare">
+                  <If.Then>
+                    <Assign DisplayName="APR Better">
+                      <Assign.To>
+                        <OutArgument x:TypeArguments="x:String">[Comparison]</OutArgument>
+                      </Assign.To>
+                      <Assign.Value>
+                        <InArgument x:TypeArguments="x:String">["UiBank APR is LOWER (better for customers)"]</InArgument>
+                      </Assign.Value>
+                    </Assign>
+                  </If.Then>
+                  <If.Else>
+                    <If Condition="[APRNumeric > EstimatedNumeric]" DisplayName="Est Better">
+                      <If.Then>
+                        <Assign DisplayName="Est Better">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="x:String">[Comparison]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="x:String">["PDF Estimated is LOWER (better for customers)"]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                      </If.Then>
+                      <If.Else>
+                        <Assign DisplayName="Equal">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="x:String">[Comparison]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="x:String">["Rates are EQUAL"]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                      </If.Else>
+                    </If>
+                  </If.Else>
+                </If>
+              </Sequence>
+            </TryCatch.Try>
+            <TryCatch.Catches>
+              <Catch x:TypeArguments="s:Exception" xmlns:s="clr-namespace:System;assembly=mscorlib">
+                <ActivityAction x:TypeArguments="s:Exception">
+                  <ActivityAction.Argument>
+                    <DelegateInArgument x:TypeArguments="s:Exception" Name="ex" />
+                  </ActivityAction.Argument>
+                  <Assign DisplayName="Comparison Error">
+                    <Assign.To>
+                      <OutArgument x:TypeArguments="x:String">[Comparison]</OutArgument>
+                    </Assign.To>
+                    <Assign.Value>
+                      <InArgument x:TypeArguments="x:String">["Unable to compare rates"]</InArgument>
+                    </Assign.Value>
+                  </Assign>
+                </ActivityAction>
+              </Catch>
+            </TryCatch.Catches>
+          </TryCatch>
+          
+          <InvokeMethod DisplayName="Add Comparison" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["RateComparison"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">[Comparison]</InArgument>
+          </InvokeMethod>
+          
+          <InvokeMethod DisplayName="Add IsNew" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["IsNewApplication"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">[IsNewApplication]</InArgument>
+          </InvokeMethod>
+          
+          <!-- If new application, create account -->
+          <If Condition="[IsNewApplication]" DisplayName="If New Application">
+            <If.Then>
+              <Sequence DisplayName="Handle New Application">
+                <ui:LogMessage DisplayName="Log: New Application" Level="Info" Message="[&quot;New application detected - Loan ID: &quot; &amp; LoanID]" />
+                
+                <!-- Call CreateApplicantAccount workflow -->
+                <ui:InvokeWorkflowFile DisplayName="Create Applicant Account" WorkflowFileName="Workflows\CreateApplicantAccount.xaml">
+                  <ui:InvokeWorkflowFile.Arguments>
+                    <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" x:Key="in_LoanData">[in_LoanData]</InArgument>
+                    <InArgument x:TypeArguments="x:String" x:Key="in_LoanID">[LoanID]</InArgument>
+                  </ui:InvokeWorkflowFile.Arguments>
+                </ui:InvokeWorkflowFile>
+                
+                <InvokeMethod DisplayName="Add AccountCreated" MethodName="Add" TargetObject="[ProcessedEntry]">
+                  <InArgument x:TypeArguments="x:String">["AccountCreated"]</InArgument>
+                  <InArgument x:TypeArguments="x:Object">[True]</InArgument>
+                </InvokeMethod>
+              </Sequence>
+            </If.Then>
+            <If.Else>
+              <Sequence DisplayName="Existing Account">
+                <ui:LogMessage DisplayName="Log: Existing" Level="Info" Message="Applicant already has an account" />
+                <InvokeMethod DisplayName="Add AccountCreated" MethodName="Add" TargetObject="[ProcessedEntry]">
+                  <InArgument x:TypeArguments="x:String">["AccountCreated"]</InArgument>
+                  <InArgument x:TypeArguments="x:Object">[False]</InArgument>
+                </InvokeMethod>
+              </Sequence>
+            </If.Else>
+          </If>
+          
+        </Sequence>
+      </Case>
+      
+      <!-- REJECTED -->
+      <Case x:Key="REJECTED">
+        <Sequence DisplayName="Handle Rejected">
+          <ui:LogMessage DisplayName="Log: Rejected" Level="Warn" Message="[&quot;Loan application rejected for: &quot; &amp; in_LoanData(&quot;Email&quot;).ToString()]" />
+          
+          <InvokeMethod DisplayName="Add LoanID NA" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["LoanID"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">["N/A"]</InArgument>
+          </InvokeMethod>
+          
+          <InvokeMethod DisplayName="Add APR NA" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["APRRate"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">["N/A"]</InArgument>
+          </InvokeMethod>
+          
+          <InvokeMethod DisplayName="Add EstRate" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["EstimatedInterestRate"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">[in_LoanData("EstimatedInterestRate")]</InArgument>
+          </InvokeMethod>
+          
+          <InvokeMethod DisplayName="Add Comparison NA" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["RateComparison"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">["N/A - Rejected"]</InArgument>
+          </InvokeMethod>
+        </Sequence>
+      </Case>
+      
+      <!-- DEFAULT (ERROR) -->
+      <Default>
+        <Sequence DisplayName="Handle Error">
+          <ui:LogMessage DisplayName="Log: Error" Level="Error" Message="[&quot;Error processing application for: &quot; &amp; in_LoanData(&quot;Email&quot;).ToString()]" />
+          
+          <InvokeMethod DisplayName="Add Error Note" MethodName="Add" TargetObject="[ProcessedEntry]">
+            <InArgument x:TypeArguments="x:String">["ErrorNote"]</InArgument>
+            <InArgument x:TypeArguments="x:Object">["Processing error occurred"]</InArgument>
+          </InvokeMethod>
+        </Sequence>
+      </Default>
+      
+    </Switch>
+    
+    <!-- Add to Results List -->
+    <InvokeMethod DisplayName="Add to Results" MethodName="Add" TargetObject="[io_ProcessedResults]">
+      <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ProcessedEntry]</InArgument>
+    </InvokeMethod>
+    
+    <ui:LogMessage DisplayName="Log: Entry Added" Level="Info" Message="[&quot;Added entry to results. Total: &quot; &amp; io_ProcessedResults.Count.ToString()]" />
+    
+  </Sequence>
+</Activity>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="GetPDFFiles"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:sio="clr-namespace:System.IO;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_FolderPath" Type="InArgument(x:String)" />
+    <x:Property Name="out_PDFFiles" Type="OutArgument(x:String[])" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  
+  <Sequence DisplayName="Get PDF Files from Folder">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String[]" Name="AllPDFs" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Scanning Folder" Level="Info" Message="[&quot;Scanning folder: &quot; &amp; in_FolderPath]" />
+    
+    <!-- Check if folder exists -->
+    <If Condition="[sio:Directory.Exists(in_FolderPath)]" DisplayName="If Folder Exists">
+      <If.Then>
+        <Sequence DisplayName="Get Files">
+          <!-- Get all PDF files -->
+          <Assign DisplayName="Get PDF Files">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String[]">[AllPDFs]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String[]">[sio:Directory.GetFiles(in_FolderPath, "*.pdf", sio:SearchOption.TopDirectoryOnly)]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <ui:LogMessage DisplayName="Log: Files Found" Level="Info" Message="[&quot;Found &quot; &amp; AllPDFs.Length.ToString() &amp; &quot; PDF files&quot;]" />
+          
+          <!-- Output files -->
+          <Assign DisplayName="Output PDF Files">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String[]">[out_PDFFiles]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String[]">[AllPDFs]</InArgument>
+            </Assign.Value>
+          </Assign>
+        </Sequence>
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="Folder Not Found">
+          <ui:LogMessage DisplayName="Log: Error" Level="Error" Message="[&quot;Folder not found: &quot; &amp; in_FolderPath]" />
+          <Throw DisplayName="Throw Folder Not Found" Exception="[New System.IO.DirectoryNotFoundException(&quot;PDF folder not found: &quot; &amp; in_FolderPath)]" />
+        </Sequence>
+      </If.Else>
+    </If>
+    
+  </Sequence>
+</Activity>

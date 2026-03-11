@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="GenerateExcelReport"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:sd="clr-namespace:System.Data;assembly=System.Data"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:uexcel="clr-namespace:UiPath.Excel.Activities;assembly=UiPath.Excel.Activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_Results" Type="InArgument(scg:List(scg:Dictionary(x:String, x:Object)))" />
+    <x:Property Name="in_OutputPath" Type="InArgument(x:String)" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  
+  <Sequence DisplayName="Generate Excel Report">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="sd:DataTable" Name="AllResultsDT" />
+      <Variable x:TypeArguments="sd:DataTable" Name="ApprovedDT" />
+      <Variable x:TypeArguments="sd:DataTable" Name="RejectedDT" />
+      <Variable x:TypeArguments="sd:DataRow" Name="NewRow" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Start Excel" Level="Info" Message="[&quot;Generating Excel report with &quot; &amp; in_Results.Count.ToString() &amp; &quot; entries&quot;]" />
+    
+    <!-- Create All Results DataTable -->
+    <Assign DisplayName="Create AllResults DT">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sd:DataTable">[AllResultsDT]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sd:DataTable">[New DataTable("AllResults")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Add Columns -->
+    <InvokeMethod DisplayName="Add Col Email" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["Email"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Amount" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["RequestAmountUSD"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Income" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["YearlyIncomeUSD"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Age" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["Age"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Country" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["Country"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Status" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["Status"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col LoanID" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["LoanID"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col APR" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["APRRate"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col EstRate" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["EstimatedInterestRate"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Comparison" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["RateComparison"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Timestamp" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["ProcessedAt"]</InArgument>
+    </InvokeMethod>
+    <InvokeMethod DisplayName="Add Col Source" MethodName="Add" TargetObject="[AllResultsDT.Columns]">
+      <InArgument x:TypeArguments="x:String">["SourceFile"]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Copy structure for Approved and Rejected -->
+    <Assign DisplayName="Clone Approved DT">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sd:DataTable">[ApprovedDT]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sd:DataTable">[AllResultsDT.Clone()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Clone Rejected DT">
+      <Assign.To>
+        <OutArgument x:TypeArguments="sd:DataTable">[RejectedDT]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="sd:DataTable">[AllResultsDT.Clone()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Populate DataTables -->
+    <ForEach x:TypeArguments="scg:Dictionary(x:String, x:Object)" DisplayName="For Each Result" Values="[in_Results]">
+      <ActivityAction x:TypeArguments="scg:Dictionary(x:String, x:Object)">
+        <ActivityAction.Argument>
+          <DelegateInArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="result" />
+        </ActivityAction.Argument>
+        <Sequence DisplayName="Add Row">
+          
+          <!-- Add to All Results -->
+          <Assign DisplayName="New Row">
+            <Assign.To>
+              <OutArgument x:TypeArguments="sd:DataRow">[NewRow]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="sd:DataRow">[AllResultsDT.NewRow()]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <!-- Set values with null checks -->
+          <Assign DisplayName="Set Email">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("Email")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("Email"), result("Email"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Amount">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("RequestAmountUSD")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("RequestAmountUSD"), result("RequestAmountUSD"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Income">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("YearlyIncomeUSD")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("YearlyIncomeUSD"), result("YearlyIncomeUSD"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Age">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("Age")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("Age"), result("Age"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Country">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("Country")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("Country"), result("Country"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Status">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("Status")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("Status"), result("Status"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set LoanID">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("LoanID")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("LoanID"), result("LoanID"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set APR">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("APRRate")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("APRRate"), result("APRRate"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set EstRate">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("EstimatedInterestRate")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("EstimatedInterestRate"), result("EstimatedInterestRate"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Comparison">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("RateComparison")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("RateComparison"), result("RateComparison"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Timestamp">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("ProcessedAt")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("ProcessedAt"), result("ProcessedAt"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <Assign DisplayName="Set Source">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:Object">[NewRow("SourceFile")]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:Object">[If(result.ContainsKey("SourceFile"), result("SourceFile"), "")]</InArgument>
+            </Assign.Value>
+          </Assign>
+          
+          <!-- Add to All Results -->
+          <InvokeMethod DisplayName="Add to All" MethodName="Add" TargetObject="[AllResultsDT.Rows]">
+            <InArgument x:TypeArguments="sd:DataRow">[NewRow]</InArgument>
+          </InvokeMethod>
+          
+          <!-- Add to Approved or Rejected based on Status -->
+          <If Condition="[result.ContainsKey(&quot;Status&quot;) AndAlso result(&quot;Status&quot;).ToString() = &quot;APPROVED&quot;]" DisplayName="If Approved">
+            <If.Then>
+              <InvokeMethod DisplayName="Add to Approved" MethodName="ImportRow" TargetObject="[ApprovedDT]">
+                <InArgument x:TypeArguments="sd:DataRow">[NewRow]</InArgument>
+              </InvokeMethod>
+            </If.Then>
+            <If.Else>
+              <InvokeMethod DisplayName="Add to Rejected" MethodName="ImportRow" TargetObject="[RejectedDT]">
+                <InArgument x:TypeArguments="sd:DataRow">[NewRow]</InArgument>
+              </InvokeMethod>
+            </If.Else>
+          </If>
+          
+        </Sequence>
+      </ActivityAction>
+    </ForEach>
+    
+    <!-- Write to Excel -->
+    <uexcel:ExcelApplicationScope DisplayName="Excel Scope" WorkbookPath="[in_OutputPath]" Visible="False">
+      <uexcel:ExcelApplicationScope.Body>
+        <ActivityAction x:TypeArguments="uexcel:WorkbookApplication">
+          <ActivityAction.Argument>
+            <DelegateInArgument x:TypeArguments="uexcel:WorkbookApplication" Name="ExcelWorkbook" />
+          </ActivityAction.Argument>
+          <Sequence DisplayName="Write Sheets">
+            
+            <!-- Write All Results Sheet -->
+            <uexcel:WriteRange DisplayName="Write All Results" DataTable="[AllResultsDT]" SheetName="All Results" StartingCell="A1" AddHeaders="True" />
+            
+            <!-- Write Approved Sheet -->
+            <uexcel:WriteRange DisplayName="Write Approved" DataTable="[ApprovedDT]" SheetName="Approved" StartingCell="A1" AddHeaders="True" />
+            
+            <!-- Write Rejected Sheet -->
+            <uexcel:WriteRange DisplayName="Write Rejected" DataTable="[RejectedDT]" SheetName="Rejected" StartingCell="A1" AddHeaders="True" />
+            
+          </Sequence>
+        </ActivityAction>
+      </uexcel:ExcelApplicationScope.Body>
+    </uexcel:ExcelApplicationScope>
+    
+    <ui:LogMessage DisplayName="Log: Excel Complete" Level="Info" Message="[&quot;Excel report saved to: &quot; &amp; in_OutputPath]" />
+    
+  </Sequence>
+</Activity>

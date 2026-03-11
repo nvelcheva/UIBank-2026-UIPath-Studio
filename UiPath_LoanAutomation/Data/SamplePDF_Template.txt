@@ -1,0 +1,7 @@
+Email: john.doe@example.com
+Request Amount: 50000 EUR
+Loan Term: 36 months
+Yearly Income: 75000 EUR
+Age: 35
+Estimated Interest Rate: 5.5%
+Country: Germany

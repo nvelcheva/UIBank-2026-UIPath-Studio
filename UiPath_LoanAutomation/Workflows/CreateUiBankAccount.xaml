@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Activity mc:Ignorable="sap sap2010 sads" x:Class="CreateUiBankAccount"
+ xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+ xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+ xmlns:mva="clr-namespace:Microsoft.VisualBasic.Activities;assembly=System.Activities"
+ xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+ xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
+ xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="out_AccountCreated" Type="OutArgument(x:Boolean)" />
+  </x:Members>
+  <mva:VisualBasic.Settings>
+    <x:Null />
+  </mva:VisualBasic.Settings>
+  
+  <Sequence DisplayName="Create UiBank Account">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="AutoGenEmail" />
+      <Variable x:TypeArguments="x:String" Name="AutoGenPassword" />
+      <Variable x:TypeArguments="x:String" Name="FirstName" />
+      <Variable x:TypeArguments="x:String" Name="LastName" />
+      <Variable x:TypeArguments="ui:Browser" Name="Browser" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Create Account Start" Level="Info" Message="Creating new UiBank account for automation..." />
+    
+    <!-- Generate Random Credentials -->
+    <Assign DisplayName="Generate Email">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[AutoGenEmail]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">["loanbot_" &amp; Guid.NewGuid().ToString().Substring(0,8) &amp; "@automation.test"]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Generate Password">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[AutoGenPassword]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">["LoanBot_" &amp; Guid.NewGuid().ToString().Substring(0,8) &amp; "!1"]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Set First Name">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[FirstName]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">["Loan"]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Set Last Name">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[LastName]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">["Automation"]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Open Browser to UiBank -->
+    <ui:OpenBrowser DisplayName="Open UiBank Register" BrowserType="Chrome" Url="https://uibank.uipath.com/register" Browser="[Browser]">
+      <ui:OpenBrowser.Body>
+        <ActivityAction x:TypeArguments="ui:Browser">
+          <ActivityAction.Argument>
+            <DelegateInArgument x:TypeArguments="ui:Browser" Name="browser" />
+          </ActivityAction.Argument>
+          <Sequence DisplayName="Fill Registration Form">
+            
+            <!-- Wait for page load -->
+            <ui:BrowserScope Browser="[browser]" DisplayName="Browser Scope">
+              <ui:BrowserScope.Body>
+                <ActivityAction x:TypeArguments="ui:Browser">
+                  <ActivityAction.Argument>
+                    <DelegateInArgument x:TypeArguments="ui:Browser" Name="b" />
+                  </ActivityAction.Argument>
+                  <Sequence DisplayName="Fill Form Fields">
+                    
+                    <!-- Enter First Name -->
+                    <ui:TypeInto DisplayName="Type First Name" DelayBetweenKeys="50" DelayMS="200">
+                      <ui:TypeInto.Target>
+                        <ui:Target Selector="&lt;webctrl tag='INPUT' name='firstName' /&gt;" WaitForReady="COMPLETE" />
+                      </ui:TypeInto.Target>
+                      <ui:TypeInto.Text>
+                        <InArgument x:TypeArguments="x:String">[FirstName]</InArgument>
+                      </ui:TypeInto.Text>
+                    </ui:TypeInto>
+                    
+                    <!-- Enter Last Name -->
+                    <ui:TypeInto DisplayName="Type Last Name" DelayBetweenKeys="50" DelayMS="200">
+                      <ui:TypeInto.Target>
+                        <ui:Target Selector="&lt;webctrl tag='INPUT' name='lastName' /&gt;" WaitForReady="COMPLETE" />
+                      </ui:TypeInto.Target>
+                      <ui:TypeInto.Text>
+                        <InArgument x:TypeArguments="x:String">[LastName]</InArgument>
+                      </ui:TypeInto.Text>
+                    </ui:TypeInto>
+                    
+                    <!-- Enter Email -->
+                    <ui:TypeInto DisplayName="Type Email" DelayBetweenKeys="50" DelayMS="200">
+                      <ui:TypeInto.Target>
+                        <ui:Target Selector="&lt;webctrl tag='INPUT' name='email' type='email' /&gt;" WaitForReady="COMPLETE" />
+                      </ui:TypeInto.Target>
+                      <ui:TypeInto.Text>
+                        <InArgument x:TypeArguments="x:String">[AutoGenEmail]</InArgument>
+                      </ui:TypeInto.Text>
+                    </ui:TypeInto>
+                    
+                    <!-- Enter Password -->
+                    <ui:TypeInto DisplayName="Type Password" DelayBetweenKeys="50" DelayMS="200">
+                      <ui:TypeInto.Target>
+                        <ui:Target Selector="&lt;webctrl tag='INPUT' name='password' type='password' /&gt;" WaitForReady="COMPLETE" />
+                      </ui:TypeInto.Target>
+                      <ui:TypeInto.Text>
+                        <InArgument x:TypeArguments="x:String">[AutoGenPassword]</InArgument>
+                      </ui:TypeInto.Text>
+                    </ui:TypeInto>
+                    
+                    <!-- Click Register Button -->
+                    <ui:Click DisplayName="Click Register" ClickType="CLICK_SINGLE" MouseButton="BTN_LEFT">
+                      <ui:Click.Target>
+                        <ui:Target Selector="&lt;webctrl tag='BUTTON' type='submit' innertext='Register' /&gt;" WaitForReady="COMPLETE" />
+                      </ui:Click.Target>
+                    </ui:Click>
+                    
+                    <!-- Wait for registration to complete -->
+                    <Delay DisplayName="Wait for Registration" Duration="[TimeSpan.FromSeconds(3)]" />
+                    
+                  </Sequence>
+                </ActivityAction>
+              </ui:BrowserScope.Body>
+            </ui:BrowserScope>
+            
+          </Sequence>
+        </ActivityAction>
+      </ui:OpenBrowser.Body>
+    </ui:OpenBrowser>
+    
+    <!-- Store credentials in Config for later use -->
+    <InvokeMethod DisplayName="Store Email in Config" MethodName="set_Item" TargetObject="[in_Config]">
+      <InArgument x:TypeArguments="x:String">["BotEmail"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[AutoGenEmail]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Store Password in Config" MethodName="set_Item" TargetObject="[in_Config]">
+      <InArgument x:TypeArguments="x:String">["BotPassword"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[AutoGenPassword]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Set Output -->
+    <Assign DisplayName="Set Account Created">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:Boolean">[out_AccountCreated]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:Boolean">[True]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Account Created" Level="Info" Message="[&quot;UiBank account created: &quot; &amp; AutoGenEmail]" />
+    
+  </Sequence>
+</Activity>

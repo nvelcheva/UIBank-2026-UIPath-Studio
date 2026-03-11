@@ -1,0 +1,148 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "triggers": {
+      "Recurrence": {
+        "type": "Recurrence",
+        "recurrence": {
+          "frequency": "Day",
+          "interval": 1,
+          "startTime": "2024-01-01T09:00:00Z"
+        }
+      }
+    },
+    "actions": {
+      "Initialize_Results_Array": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "ProcessedResults",
+              "type": "array",
+              "value": []
+            }
+          ]
+        },
+        "runAfter": {}
+      },
+      "Get_PDF_Files_from_SharePoint": {
+        "type": "ApiConnection",
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['sharepointonline']['connectionId']"
+            }
+          },
+          "method": "get",
+          "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://yourcompany.sharepoint.com/sites/LoanProcessing'))}/tables/@{encodeURIComponent(encodeURIComponent('LoanPDFs'))}/items"
+        },
+        "runAfter": {
+          "Initialize_Results_Array": ["Succeeded"]
+        }
+      },
+      "For_Each_PDF": {
+        "type": "Foreach",
+        "foreach": "@body('Get_PDF_Files_from_SharePoint')?['value']",
+        "actions": {
+          "Get_PDF_Content": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['sharepointonline']['connectionId']"
+                }
+              },
+              "method": "get",
+              "path": "/datasets/@{encodeURIComponent(encodeURIComponent('https://yourcompany.sharepoint.com/sites/LoanProcessing'))}/files/@{encodeURIComponent(items('For_Each_PDF')?['Id'])}/$value"
+            },
+            "runAfter": {}
+          },
+          "Extract_PDF_Data_AI_Builder": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['aibuilder']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/v2/documentprocessing/models/@{encodeURIComponent('LoanApplicationModel')}/predict",
+              "body": {
+                "document": "@body('Get_PDF_Content')"
+              }
+            },
+            "runAfter": {
+              "Get_PDF_Content": ["Succeeded"]
+            }
+          },
+          "Get_Exchange_Rate": {
+            "type": "Http",
+            "inputs": {
+              "method": "GET",
+              "uri": "https://api.exchangerate-api.com/v4/latest/USD"
+            },
+            "runAfter": {
+              "Extract_PDF_Data_AI_Builder": ["Succeeded"]
+            }
+          },
+          "Trigger_UiPath_Job": {
+            "type": "ApiConnection",
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['uipath']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/odata/Jobs/UiPath.Server.Configuration.OData.StartJobs",
+              "body": {
+                "startInfo": {
+                  "ReleaseKey": "@{parameters('UiPathReleaseKey')}",
+                  "Strategy": "Specific",
+                  "RobotIds": ["@{parameters('UiPathRobotId')}"]
+                }
+              }
+            },
+            "runAfter": {
+              "Get_Exchange_Rate": ["Succeeded"]
+            }
+          }
+        },
+        "runAfter": {
+          "Get_PDF_Files_from_SharePoint": ["Succeeded"]
+        }
+      },
+      "Create_Excel_Report": {
+        "type": "ApiConnection",
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['excelonline']['connectionId']"
+            }
+          },
+          "method": "post",
+          "path": "/drives/default/items/root/workbook/worksheets/Results/tables/LoanResults/rows",
+          "body": "@variables('ProcessedResults')"
+        },
+        "runAfter": {
+          "For_Each_PDF": ["Succeeded"]
+        }
+      }
+    },
+    "parameters": {
+      "$connections": {
+        "type": "Object",
+        "defaultValue": {}
+      },
+      "UiPathReleaseKey": {
+        "type": "String",
+        "defaultValue": "your-release-key"
+      },
+      "UiPathRobotId": {
+        "type": "String",
+        "defaultValue": "your-robot-id"
+      }
+    }
+  }
+}
