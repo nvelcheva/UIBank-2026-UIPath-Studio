@@ -1,0 +1,151 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="ConvertCurrency"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+  xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+  xmlns:ui="http://schemas.uipath.com/workflow/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="io_LoanData" Type="InOutArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  
+  <Sequence DisplayName="Convert Currency to USD">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="SourceCurrency" />
+      <Variable x:TypeArguments="x:Double" Name="OriginalAmount" Default="0" />
+      <Variable x:TypeArguments="x:Double" Name="OriginalIncome" Default="0" />
+      <Variable x:TypeArguments="x:Double" Name="ConvertedAmount" Default="0" />
+      <Variable x:TypeArguments="x:Double" Name="ConvertedIncome" Default="0" />
+      <Variable x:TypeArguments="x:Double" Name="ExchangeRate" Default="1" />
+    </Sequence.Variables>
+    
+    <!-- Get Currency from Data -->
+    <Assign DisplayName="Get Currency">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[SourceCurrency]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[io_LoanData("Currency").ToString().ToUpper()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Currency" Level="Info" Message="[&quot;Source currency: &quot; &amp; SourceCurrency]" />
+    
+    <!-- Get Exchange Rate based on currency -->
+    <Switch x:TypeArguments="x:String" DisplayName="Get Exchange Rate" Expression="[SourceCurrency]">
+      <Case x:Key="USD">
+        <Assign DisplayName="USD Rate">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Double">[ExchangeRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Double">[1.0]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </Case>
+      <Case x:Key="EUR">
+        <Assign DisplayName="EUR Rate">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Double">[ExchangeRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Double">[0.92]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </Case>
+      <Case x:Key="GBP">
+        <Assign DisplayName="GBP Rate">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Double">[ExchangeRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Double">[0.79]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </Case>
+      <Case x:Key="BGN">
+        <Assign DisplayName="BGN Rate">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Double">[ExchangeRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Double">[1.80]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </Case>
+      <Case x:Key="JPY">
+        <Assign DisplayName="JPY Rate">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Double">[ExchangeRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Double">[149.5]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </Case>
+      <Default>
+        <Assign DisplayName="Default Rate">
+          <Assign.To>
+            <OutArgument x:TypeArguments="x:Double">[ExchangeRate]</OutArgument>
+          </Assign.To>
+          <Assign.Value>
+            <InArgument x:TypeArguments="x:Double">[1.0]</InArgument>
+          </Assign.Value>
+        </Assign>
+      </Default>
+    </Switch>
+    
+    <!-- Parse Original Amounts -->
+    <Assign DisplayName="Parse Original Amount">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:Double">[OriginalAmount]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:Double">[Double.Parse(io_LoanData("RequestAmount").ToString())]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Parse Original Income">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:Double">[OriginalIncome]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:Double">[Double.Parse(io_LoanData("YearlyIncome").ToString())]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Convert to USD -->
+    <Assign DisplayName="Convert Amount">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:Double">[ConvertedAmount]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:Double">[Math.Round(OriginalAmount / ExchangeRate, 2)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Convert Income">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:Double">[ConvertedIncome]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:Double">[Math.Round(OriginalIncome / ExchangeRate, 2)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Converted" Level="Info" Message="[&quot;Converted: &quot; &amp; OriginalAmount.ToString() &amp; &quot; &quot; &amp; SourceCurrency &amp; &quot; = &quot; &amp; ConvertedAmount.ToString() &amp; &quot; USD&quot;]" />
+    
+    <!-- Update Dictionary with USD Values -->
+    <InvokeMethod DisplayName="Update Amount USD" MethodName="set_Item" TargetObject="[io_LoanData]">
+      <InArgument x:TypeArguments="x:String">["RequestAmountUSD"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[ConvertedAmount]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Update Income USD" MethodName="set_Item" TargetObject="[io_LoanData]">
+      <InArgument x:TypeArguments="x:String">["YearlyIncomeUSD"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[ConvertedIncome]</InArgument>
+    </InvokeMethod>
+    
+  </Sequence>
+</Activity>

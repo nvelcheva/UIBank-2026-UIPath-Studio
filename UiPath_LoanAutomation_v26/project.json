@@ -1,0 +1,49 @@
+{
+  "name": "LoanAutomation_UiBank",
+  "projectId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "description": "Automated loan submission and tracking system for UiBank",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.System.Activities": "[24.10.3]",
+    "UiPath.UIAutomation.Activities": "[24.10.3]",
+    "UiPath.Excel.Activities": "[2.24.0]",
+    "UiPath.PDF.Activities": "[3.19.0]",
+    "UiPath.WebAPI.Activities": "[1.20.0]"
+  },
+  "webServices": [],
+  "entitiesRecords": [],
+  "schemaVersion": "24.10.3",
+  "studioVersion": "26.0.0.0",
+  "projectVersion": "1.0.0",
+  "runtimeOptions": {
+    "autoDispose": false,
+    "netFramework": false,
+    "firingEvents": false,
+    "excludedLoggedData": [
+      "Private:*",
+      "*password*"
+    ],
+    "executionType": "Workflow",
+    "readyForPiP": false,
+    "startsInPiP": false,
+    "mustRestoreAllDependencies": true,
+    "supportsPersistence": false
+  },
+  "designOptions": {
+    "projectProfile": "Developement",
+    "outputType": "Process",
+    "libraryOptions": {
+      "includeOriginalXaml": false,
+      "privateWorkflows": []
+    },
+    "processOptions": {
+      "ignoredFiles": []
+    },
+    "fileInfoCollection": []
+  },
+  "expressionLanguage": "VisualBasic",
+  "isTemplate": false,
+  "templateProjectData": {},
+  "publishData": {},
+  "targetFramework": "Windows"
+}

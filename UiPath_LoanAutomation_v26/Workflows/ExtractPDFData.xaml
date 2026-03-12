@@ -1,0 +1,166 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="ExtractPDFData"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+  xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+  xmlns:ui="http://schemas.uipath.com/workflow/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_PDFPath" Type="InArgument(x:String)" />
+    <x:Property Name="out_LoanData" Type="OutArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  
+  <Sequence DisplayName="Extract PDF Data">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="PDFText" />
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="ExtractedData" />
+      <Variable x:TypeArguments="x:String" Name="Email" Default="" />
+      <Variable x:TypeArguments="x:String" Name="RequestAmount" Default="" />
+      <Variable x:TypeArguments="x:String" Name="Currency" Default="USD" />
+      <Variable x:TypeArguments="x:String" Name="YearlyIncome" Default="" />
+      <Variable x:TypeArguments="x:String" Name="Age" Default="" />
+      <Variable x:TypeArguments="x:String" Name="InterestRate" Default="" />
+      <Variable x:TypeArguments="x:String" Name="Country" Default="" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Extract Start" Level="Info" Message="[&quot;Extracting data from: &quot; &amp; in_PDFPath]" />
+    
+    <!-- Read PDF Text using Read PDF Text activity -->
+    <ui:ReadPDFText DisplayName="Read PDF Text" FileName="[in_PDFPath]" Text="[PDFText]" />
+    
+    <!-- Initialize Dictionary -->
+    <Assign DisplayName="Initialize Data Dict">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ExtractedData]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[New Dictionary(Of String, Object)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Store Source File Path -->
+    <InvokeMethod DisplayName="Add Source Path" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["SourceFile"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_PDFPath]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Email using Regex -->
+    <Assign DisplayName="Extract Email">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Email]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "Email[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", System.Text.RegularExpressions.RegexOptions.IgnoreCase), System.Text.RegularExpressions.Regex.Match(PDFText, "Email[:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim(), "")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Email" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Email"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Email]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Request Amount -->
+    <Assign DisplayName="Extract Amount">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[RequestAmount]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "Request\s*Amount[:\s]*([0-9,.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase), System.Text.RegularExpressions.Regex.Match(PDFText, "Request\s*Amount[:\s]*([0-9,.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim().Replace(",", ""), "0")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Amount" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["RequestAmount"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[RequestAmount]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Currency -->
+    <Assign DisplayName="Extract Currency">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Currency]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "([A-Z]{3})\s*$", System.Text.RegularExpressions.RegexOptions.Multiline), System.Text.RegularExpressions.Regex.Match(PDFText, "Request\s*Amount[:\s]*[0-9,.]+\s*([A-Z]{3})", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim().ToUpper(), "USD")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Currency" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Currency"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Currency]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Yearly Income -->
+    <Assign DisplayName="Extract Income">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[YearlyIncome]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "Yearly\s*Income[:\s]*([0-9,.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase), System.Text.RegularExpressions.Regex.Match(PDFText, "Yearly\s*Income[:\s]*([0-9,.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim().Replace(",", ""), "0")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Income" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["YearlyIncome"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[YearlyIncome]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Age -->
+    <Assign DisplayName="Extract Age">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Age]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "Age[:\s]*([0-9]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase), System.Text.RegularExpressions.Regex.Match(PDFText, "Age[:\s]*([0-9]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim(), "0")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Age" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Age"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Age]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Interest Rate -->
+    <Assign DisplayName="Extract Interest">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[InterestRate]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "Interest\s*Rate[:\s]*([0-9.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase), System.Text.RegularExpressions.Regex.Match(PDFText, "Interest\s*Rate[:\s]*([0-9.]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim(), "0")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Interest" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["EstimatedInterestRate"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[InterestRate]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Extract Country -->
+    <Assign DisplayName="Extract Country">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Country]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[If(System.Text.RegularExpressions.Regex.IsMatch(PDFText, "Country[:\s]*([A-Za-z\s]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase), System.Text.RegularExpressions.Regex.Match(PDFText, "Country[:\s]*([A-Za-z\s]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups(1).Value.Trim(), "")]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <InvokeMethod DisplayName="Add Country" MethodName="Add" TargetObject="[ExtractedData]">
+      <InArgument x:TypeArguments="x:String">["Country"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Country]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Output -->
+    <Assign DisplayName="Output Data">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[out_LoanData]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ExtractedData]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Extract Complete" Level="Info" Message="[&quot;Extracted - Email: &quot; &amp; Email &amp; &quot;, Amount: &quot; &amp; RequestAmount &amp; &quot; &quot; &amp; Currency]" />
+    
+  </Sequence>
+</Activity>

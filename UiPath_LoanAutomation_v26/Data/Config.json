@@ -1,0 +1,18 @@
+{
+  "Settings": {
+    "UiBankURL": "https://uibank.uipath.com",
+    "LoanApplicationURL": "https://uibank.uipath.com/loan-application",
+    "ExchangeRateAPI": "https://api.exchangerate-api.com/v4/latest/USD"
+  },
+  "Assets": {
+    "PDFFolderPath": "C:\\LoanAutomation\\Input\\PDFs",
+    "OutputExcelPath": "C:\\LoanAutomation\\Output\\LoanResults.xlsx"
+  },
+  "CurrencyRates": {
+    "EUR": 0.92,
+    "GBP": 0.79,
+    "BGN": 1.80,
+    "JPY": 149.5,
+    "CHF": 0.88
+  }
+}

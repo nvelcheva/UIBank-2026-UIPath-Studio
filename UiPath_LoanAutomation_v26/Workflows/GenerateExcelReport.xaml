@@ -1,0 +1,82 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="GenerateExcelReport"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+  xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+  xmlns:sd="clr-namespace:System.Data;assembly=System.Data"
+  xmlns:ui="http://schemas.uipath.com/workflow/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_Results" Type="InArgument(scg:List(scg:Dictionary(x:String, x:Object)))" />
+    <x:Property Name="in_OutputPath" Type="InArgument(x:String)" />
+  </x:Members>
+  
+  <Sequence DisplayName="Generate Excel Report">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="sd:DataTable" Name="ResultsDT" />
+      <Variable x:TypeArguments="sd:DataRow" Name="NewRow" />
+    </Sequence.Variables>
+    
+    <ui:LogMessage DisplayName="Log: Start Excel" Level="Info" Message="[&quot;Generating Excel report with &quot; &amp; in_Results.Count.ToString() &amp; &quot; entries&quot;]" />
+    
+    <!-- Create DataTable -->
+    <ui:BuildDataTable DisplayName="Build Results DataTable" DataTable="[ResultsDT]">
+      <ui:BuildDataTable.Columns>
+        <ui:DataTableColumnInfo ColumnName="Email" />
+        <ui:DataTableColumnInfo ColumnName="RequestAmountUSD" />
+        <ui:DataTableColumnInfo ColumnName="Status" />
+        <ui:DataTableColumnInfo ColumnName="LoanID" />
+        <ui:DataTableColumnInfo ColumnName="APRRate" />
+        <ui:DataTableColumnInfo ColumnName="EstimatedInterestRate" />
+        <ui:DataTableColumnInfo ColumnName="ProcessedAt" />
+      </ui:BuildDataTable.Columns>
+    </ui:BuildDataTable>
+    
+    <!-- Populate DataTable -->
+    <ForEach x:TypeArguments="scg:Dictionary(x:String, x:Object)" DisplayName="For Each Result" Values="[in_Results]">
+      <ActivityAction x:TypeArguments="scg:Dictionary(x:String, x:Object)">
+        <ActivityAction.Argument>
+          <DelegateInArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="result" />
+        </ActivityAction.Argument>
+        <Sequence DisplayName="Add Row">
+          
+          <ui:AddDataRow DisplayName="Add Data Row" DataTable="[ResultsDT]">
+            <ui:AddDataRow.ArrayRow>
+              <InArgument x:TypeArguments="x:Object[]">[{
+                If(result.ContainsKey("Email"), result("Email"), ""),
+                If(result.ContainsKey("RequestAmountUSD"), result("RequestAmountUSD"), ""),
+                If(result.ContainsKey("Status"), result("Status"), ""),
+                If(result.ContainsKey("LoanID"), result("LoanID"), ""),
+                If(result.ContainsKey("APRRate"), result("APRRate"), ""),
+                If(result.ContainsKey("EstimatedInterestRate"), result("EstimatedInterestRate"), ""),
+                If(result.ContainsKey("ProcessedAt"), result("ProcessedAt"), "")
+              }]</InArgument>
+            </ui:AddDataRow.ArrayRow>
+          </ui:AddDataRow>
+          
+        </Sequence>
+      </ActivityAction>
+    </ForEach>
+    
+    <!-- Write to Excel -->
+    <ui:ExcelApplicationScope DisplayName="Excel Scope" WorkbookPath="[in_OutputPath]" Visible="False">
+      <ui:ExcelApplicationScope.Body>
+        <ActivityAction x:TypeArguments="ui:WorkbookApplication">
+          <ActivityAction.Argument>
+            <DelegateInArgument x:TypeArguments="ui:WorkbookApplication" Name="ExcelWorkbook" />
+          </ActivityAction.Argument>
+          <Sequence DisplayName="Write Sheets">
+            
+            <!-- Write All Results -->
+            <ui:WriteRange DisplayName="Write Results" DataTable="[ResultsDT]" SheetName="All Results" StartingCell="A1" AddHeaders="True" />
+            
+          </Sequence>
+        </ActivityAction>
+      </ui:ExcelApplicationScope.Body>
+    </ui:ExcelApplicationScope>
+    
+    <ui:LogMessage DisplayName="Log: Excel Complete" Level="Info" Message="[&quot;Excel report saved to: &quot; &amp; in_OutputPath]" />
+    
+  </Sequence>
+</Activity>

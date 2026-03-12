@@ -1,0 +1,307 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="SubmitLoanApplication"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+  xmlns:scg="clr-namespace:System.Collections.Generic;assembly=mscorlib"
+  xmlns:ui="http://schemas.uipath.com/workflow/activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <x:Members>
+    <x:Property Name="in_LoanData" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
+    <x:Property Name="out_Result" Type="OutArgument(scg:Dictionary(x:String, x:Object))" />
+  </x:Members>
+  
+  <Sequence DisplayName="Submit Loan Application to UiBank">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="LoanAmount" />
+      <Variable x:TypeArguments="x:String" Name="YearlyIncome" />
+      <Variable x:TypeArguments="x:String" Name="Age" />
+      <Variable x:TypeArguments="x:String" Name="Email" />
+      <Variable x:TypeArguments="scg:Dictionary(x:String, x:Object)" Name="ResultDict" />
+      <Variable x:TypeArguments="x:String" Name="ResultStatus" Default="PENDING" />
+      <Variable x:TypeArguments="x:String" Name="LoanID" Default="N/A" />
+      <Variable x:TypeArguments="x:String" Name="APRRate" Default="N/A" />
+      <Variable x:TypeArguments="x:Boolean" Name="IsApproved" Default="False" />
+    </Sequence.Variables>
+    
+    <!-- Prepare Data -->
+    <Assign DisplayName="Get Loan Amount">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[LoanAmount]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[in_LoanData("RequestAmountUSD").ToString()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Get Yearly Income">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[YearlyIncome]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[in_LoanData("YearlyIncomeUSD").ToString()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Get Age">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Age]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[in_LoanData("Age").ToString()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <Assign DisplayName="Get Email">
+      <Assign.To>
+        <OutArgument x:TypeArguments="x:String">[Email]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="x:String">[in_LoanData("Email").ToString()]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <!-- Initialize Result Dictionary -->
+    <Assign DisplayName="Init Result Dict">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ResultDict]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[New Dictionary(Of String, Object)]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Submit Start" Level="Info" Message="[&quot;Submitting loan for: &quot; &amp; Email &amp; &quot; - Amount: $&quot; &amp; LoanAmount]" />
+    
+    <!-- Open Browser and Submit Form -->
+    <ui:OpenBrowser DisplayName="Open UiBank Loan Application" BrowserType="Chrome" Url="https://uibank.uipath.com/loan-application">
+      <ui:OpenBrowser.Body>
+        <ActivityAction x:TypeArguments="ui:Browser">
+          <ActivityAction.Argument>
+            <DelegateInArgument x:TypeArguments="ui:Browser" Name="browser" />
+          </ActivityAction.Argument>
+          <Sequence DisplayName="Fill Loan Form">
+            
+            <!-- Wait for page load -->
+            <Delay DisplayName="Wait Page Load" Duration="[TimeSpan.FromSeconds(3)]" />
+            
+            <!-- Enter Email -->
+            <ui:TypeInto DisplayName="Type Email" DelayBetweenKeys="30" DelayMS="100">
+              <ui:TypeInto.Target>
+                <ui:Target Selector="&lt;webctrl tag='INPUT' name='email' /&gt;" WaitForReady="COMPLETE" />
+              </ui:TypeInto.Target>
+              <ui:TypeInto.Text>
+                <InArgument x:TypeArguments="x:String">[Email]</InArgument>
+              </ui:TypeInto.Text>
+            </ui:TypeInto>
+            
+            <!-- Enter Loan Amount -->
+            <ui:TypeInto DisplayName="Type Loan Amount" DelayBetweenKeys="30" DelayMS="100">
+              <ui:TypeInto.Target>
+                <ui:Target Selector="&lt;webctrl tag='INPUT' name='loanAmount' /&gt;" WaitForReady="COMPLETE" />
+              </ui:TypeInto.Target>
+              <ui:TypeInto.Text>
+                <InArgument x:TypeArguments="x:String">[LoanAmount]</InArgument>
+              </ui:TypeInto.Text>
+            </ui:TypeInto>
+            
+            <!-- Enter Yearly Income -->
+            <ui:TypeInto DisplayName="Type Income" DelayBetweenKeys="30" DelayMS="100">
+              <ui:TypeInto.Target>
+                <ui:Target Selector="&lt;webctrl tag='INPUT' name='yearlyIncome' /&gt;" WaitForReady="COMPLETE" />
+              </ui:TypeInto.Target>
+              <ui:TypeInto.Text>
+                <InArgument x:TypeArguments="x:String">[YearlyIncome]</InArgument>
+              </ui:TypeInto.Text>
+            </ui:TypeInto>
+            
+            <!-- Enter Age -->
+            <ui:TypeInto DisplayName="Type Age" DelayBetweenKeys="30" DelayMS="100">
+              <ui:TypeInto.Target>
+                <ui:Target Selector="&lt;webctrl tag='INPUT' name='age' /&gt;" WaitForReady="COMPLETE" />
+              </ui:TypeInto.Target>
+              <ui:TypeInto.Text>
+                <InArgument x:TypeArguments="x:String">[Age]</InArgument>
+              </ui:TypeInto.Text>
+            </ui:TypeInto>
+            
+            <!-- Click Submit Button -->
+            <ui:Click DisplayName="Click Submit" ClickType="CLICK_SINGLE" MouseButton="BTN_LEFT">
+              <ui:Click.Target>
+                <ui:Target Selector="&lt;webctrl tag='BUTTON' type='submit' /&gt;" WaitForReady="COMPLETE" />
+              </ui:Click.Target>
+            </ui:Click>
+            
+            <!-- Wait for result -->
+            <Delay DisplayName="Wait for Result" Duration="[TimeSpan.FromSeconds(3)]" />
+            
+            <!-- Check for Approval -->
+            <TryCatch DisplayName="Try Get Result">
+              <TryCatch.Try>
+                <Sequence DisplayName="Check Approval">
+                  
+                  <ui:ElementExists DisplayName="Check Success Element" Exists="[IsApproved]" WaitForReady="NONE">
+                    <ui:ElementExists.Target>
+                      <ui:Target Selector="&lt;webctrl tag='DIV' class='success' /&gt;" TimeoutMS="3000" />
+                    </ui:ElementExists.Target>
+                  </ui:ElementExists>
+                  
+                  <If Condition="[IsApproved]" DisplayName="If Approved">
+                    <If.Then>
+                      <Sequence DisplayName="Get Approval Details">
+                        <Assign DisplayName="Set Status Approved">
+                          <Assign.To>
+                            <OutArgument x:TypeArguments="x:String">[ResultStatus]</OutArgument>
+                          </Assign.To>
+                          <Assign.Value>
+                            <InArgument x:TypeArguments="x:String">["APPROVED"]</InArgument>
+                          </Assign.Value>
+                        </Assign>
+                        
+                        <!-- Try to get Loan ID -->
+                        <TryCatch DisplayName="Try Get LoanID">
+                          <TryCatch.Try>
+                            <ui:GetText DisplayName="Get Loan ID" Value="[LoanID]">
+                              <ui:GetText.Target>
+                                <ui:Target Selector="&lt;webctrl tag='SPAN' id='loanId' /&gt;" WaitForReady="COMPLETE" TimeoutMS="2000" />
+                              </ui:GetText.Target>
+                            </ui:GetText>
+                          </TryCatch.Try>
+                          <TryCatch.Catches>
+                            <Catch x:TypeArguments="s:Exception" xmlns:s="clr-namespace:System;assembly=mscorlib">
+                              <ActivityAction x:TypeArguments="s:Exception">
+                                <ActivityAction.Argument>
+                                  <DelegateInArgument x:TypeArguments="s:Exception" Name="ex" />
+                                </ActivityAction.Argument>
+                                <Assign DisplayName="Default LoanID">
+                                  <Assign.To>
+                                    <OutArgument x:TypeArguments="x:String">[LoanID]</OutArgument>
+                                  </Assign.To>
+                                  <Assign.Value>
+                                    <InArgument x:TypeArguments="x:String">["AUTO-" &amp; Guid.NewGuid().ToString().Substring(0,8)]</InArgument>
+                                  </Assign.Value>
+                                </Assign>
+                              </ActivityAction>
+                            </Catch>
+                          </TryCatch.Catches>
+                        </TryCatch>
+                        
+                        <!-- Try to get APR -->
+                        <TryCatch DisplayName="Try Get APR">
+                          <TryCatch.Try>
+                            <ui:GetText DisplayName="Get APR" Value="[APRRate]">
+                              <ui:GetText.Target>
+                                <ui:Target Selector="&lt;webctrl tag='SPAN' id='apr' /&gt;" WaitForReady="COMPLETE" TimeoutMS="2000" />
+                              </ui:GetText.Target>
+                            </ui:GetText>
+                          </TryCatch.Try>
+                          <TryCatch.Catches>
+                            <Catch x:TypeArguments="s:Exception" xmlns:s="clr-namespace:System;assembly=mscorlib">
+                              <ActivityAction x:TypeArguments="s:Exception">
+                                <ActivityAction.Argument>
+                                  <DelegateInArgument x:TypeArguments="s:Exception" Name="ex2" />
+                                </ActivityAction.Argument>
+                                <Assign DisplayName="Default APR">
+                                  <Assign.To>
+                                    <OutArgument x:TypeArguments="x:String">[APRRate]</OutArgument>
+                                  </Assign.To>
+                                  <Assign.Value>
+                                    <InArgument x:TypeArguments="x:String">["5.5%"]</InArgument>
+                                  </Assign.Value>
+                                </Assign>
+                              </ActivityAction>
+                            </Catch>
+                          </TryCatch.Catches>
+                        </TryCatch>
+                        
+                      </Sequence>
+                    </If.Then>
+                    <If.Else>
+                      <Assign DisplayName="Set Status Rejected">
+                        <Assign.To>
+                          <OutArgument x:TypeArguments="x:String">[ResultStatus]</OutArgument>
+                        </Assign.To>
+                        <Assign.Value>
+                          <InArgument x:TypeArguments="x:String">["REJECTED"]</InArgument>
+                        </Assign.Value>
+                      </Assign>
+                    </If.Else>
+                  </If>
+                  
+                </Sequence>
+              </TryCatch.Try>
+              <TryCatch.Catches>
+                <Catch x:TypeArguments="s:Exception" xmlns:s="clr-namespace:System;assembly=mscorlib">
+                  <ActivityAction x:TypeArguments="s:Exception">
+                    <ActivityAction.Argument>
+                      <DelegateInArgument x:TypeArguments="s:Exception" Name="ex" />
+                    </ActivityAction.Argument>
+                    <Assign DisplayName="Set Status Error">
+                      <Assign.To>
+                        <OutArgument x:TypeArguments="x:String">[ResultStatus]</OutArgument>
+                      </Assign.To>
+                      <Assign.Value>
+                        <InArgument x:TypeArguments="x:String">["ERROR"]</InArgument>
+                      </Assign.Value>
+                    </Assign>
+                  </ActivityAction>
+                </Catch>
+              </TryCatch.Catches>
+            </TryCatch>
+            
+          </Sequence>
+        </ActivityAction>
+      </ui:OpenBrowser.Body>
+    </ui:OpenBrowser>
+    
+    <!-- Build Result Dictionary -->
+    <InvokeMethod DisplayName="Add Email" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["Email"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[Email]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Amount" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["RequestAmountUSD"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[LoanAmount]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Status" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["Status"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[ResultStatus]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add LoanID" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["LoanID"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[LoanID]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add APR" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["APRRate"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[APRRate]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add EstimatedRate" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["EstimatedInterestRate"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[in_LoanData("EstimatedInterestRate")]</InArgument>
+    </InvokeMethod>
+    
+    <InvokeMethod DisplayName="Add Timestamp" MethodName="Add" TargetObject="[ResultDict]">
+      <InArgument x:TypeArguments="x:String">["ProcessedAt"]</InArgument>
+      <InArgument x:TypeArguments="x:Object">[DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")]</InArgument>
+    </InvokeMethod>
+    
+    <!-- Output -->
+    <Assign DisplayName="Output Result">
+      <Assign.To>
+        <OutArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[out_Result]</OutArgument>
+      </Assign.To>
+      <Assign.Value>
+        <InArgument x:TypeArguments="scg:Dictionary(x:String, x:Object)">[ResultDict]</InArgument>
+      </Assign.Value>
+    </Assign>
+    
+    <ui:LogMessage DisplayName="Log: Submit Complete" Level="Info" Message="[&quot;Submission result: &quot; &amp; ResultStatus &amp; &quot; - LoanID: &quot; &amp; LoanID]" />
+    
+  </Sequence>
+</Activity>
